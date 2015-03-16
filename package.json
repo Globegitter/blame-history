@@ -21,10 +21,12 @@
   },
   "homepage": "https://github.com/Globegitter/blame-history",
   "dependencies": {
+    "babel": "^4.7.12",
     "git-tools": "^0.1.4"
   },
   "devDependencies": {
     "babel-eslint": "^2.0.2",
+    "chai": "^2.1.2",
     "eslint": "^0.17.0",
     "glob": "^5.0.3",
     "mocha": "^2.2.1",
