@@ -4,7 +4,7 @@
   "description": "A tool that analyses the commit history for a file and builds a history for every line in that file.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node tests/runner"
   },
   "repository": {
     "type": "git",
@@ -19,5 +19,18 @@
   "bugs": {
     "url": "https://github.com/Globegitter/blame-history/issues"
   },
-  "homepage": "https://github.com/Globegitter/blame-history"
+  "homepage": "https://github.com/Globegitter/blame-history",
+  "dependencies": {
+    "git-tools": "^0.1.4"
+  },
+  "devDependencies": {
+    "babel-eslint": "^2.0.2",
+    "eslint": "^0.17.0",
+    "glob": "^5.0.3",
+    "mocha": "^2.2.1",
+    "mocha-eslint": "git://github.com/Globegitter/mocha-eslint#patch-1"
+  },
+  "directories": {
+    "test": "tests"
+  }
 }
