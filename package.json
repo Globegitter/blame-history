@@ -30,7 +30,8 @@
     "eslint": "^0.17.0",
     "glob": "^5.0.3",
     "mocha": "^2.2.1",
-    "mocha-eslint": "git://github.com/Globegitter/mocha-eslint#patch-1"
+    "mocha-eslint": "git://github.com/Globegitter/mocha-eslint#patch-1",
+    "simple-git": "file:../git-js"
   },
   "directories": {
     "test": "tests"
