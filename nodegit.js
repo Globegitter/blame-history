@@ -12,7 +12,7 @@ module.exports = async function () {
   }
 
   // console.log('firstMasterCommit', firstMasterCommit);
-  var history = firstMasterCommit.history(Git.Revwalk.SORT.Time);
+  var history = firstMasterCommit.history(Git.Revwalk.SORT.REVERSE);
   // var commits = [];
   // console.log(history);
   // History emits "commit" event for each commit in the branch's history
@@ -57,14 +57,26 @@ module.exports = async function () {
   //     console.log("\n    " + commit.message());
   //   });
   // });
-  history.on("commit", function(commit) {
-    console.log("commit " + commit.sha());
-    console.log("Author:", commit.author().name() +
-    " <" + commit.author().email() + ">");
-    console.log("Date:", commit.date());
-    console.log("\n    " + commit.message());
+  history.on('commit', async function (commit) {
+    console.log();
+    console.log();
+    console.log('Date:', commit.date());
+    console.log(commit.message());
+    var diffList = await commit.getDiff();
+    // console.log(diffList);
+    diffList.map(function (diff) {
+      diff.patches().map(function (patch) {
+        console.log('oldFile', patch.oldFile().path());
+        console.log('newFile', patch.newFile().path());
+      });
+    });
+    // console.log('commit ' + commit.sha());
+    // console.log('Author:', commit.author().name() +
+    // ' <' + commit.author().email() + '>');
+    // console.log('Date:', commit.date());
+    // console.log('\n    ' + commit.message());
   });
 
-// Don't forget to call `start()`!
-history.start();
-}
+  // Don't forget to call `start()`!
+  history.start();
+};
