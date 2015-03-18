@@ -2,6 +2,7 @@ var Git = require('nodegit');
 
 module.exports = async function () {
   // console.log(process.cwd());
+  var filename = 'index.js'
   var firstMasterCommit;
   try {
     firstMasterCommit = await Git.Repository.open('./').then(function (repository) {
