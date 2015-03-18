@@ -4,7 +4,7 @@ var lint = require('mocha-eslint');
 
 var paths = [
   'index.js',
-  'nodegit.js',
+  'nodegit-test.js',
   'tests',
 ];
 var options = {};

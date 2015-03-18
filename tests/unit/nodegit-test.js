@@ -2,7 +2,7 @@
 
 var { assert } = require('chai');
 
-var nodegitFile = require('../../nodegit');
+var nodegitFile = require('../../nodegit-test');
 
 describe('nodegit file', function () {
   it('works', async function () {
