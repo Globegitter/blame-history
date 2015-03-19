@@ -44,7 +44,7 @@ module.exports = async function (cmdArgs) {
           //geting the file content
           for (var hunk of patch.hunks()) {
             console.log('header', hunk.header().trim());
-            console.log('size', hunk.size());
+            console.log('displayed diff/hunk size', hunk.size());
             var count = 1;
             //getting the file line-by-line
             for (var line of hunk.lines()) {
