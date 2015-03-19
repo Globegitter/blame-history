@@ -40,11 +40,11 @@ module.exports = async function (cmdArgs) {
          " <" + commit.author().email() + ">");
           console.log("Date:", commit.date());
           console.log("\n    " + commit.message());
-          console.log(`Showing file ${filePath}`);
+          console.log(`Showing hunk/diff for file ${filePath}`);
           //geting the file content
           for (var hunk of patch.hunks()) {
+            console.log('displayed hunk/diff size:', hunk.size());
             console.log('header', hunk.header().trim());
-            console.log('displayed diff/hunk size', hunk.size());
             var count = 1;
             //getting the file line-by-line
             for (var line of hunk.lines()) {
