@@ -5,6 +5,7 @@
     "no-underscore-dangle": 0,
     "no-multi-spaces": 0,
     "key-spacing": 0,
+    "no-unused-vars": 1,
     "consistent-return": 1,
     "no-shadow": 0,
     "comma-dangle": [1, "never"],
@@ -18,12 +19,13 @@
     "indent": [2, 2],
     "brace-style": [2, "1tbs"],
     "space-after-keywords": 2,
-    "space-before-function-parentheses": [2, {
+    "space-before-function-parentheses": [1, {
       "anonymous": "always",
       "named": "never"
     }],
     "space-infix-ops": 2,
-    "spaced-line-comment": [1, "always", {"exceptions":["-","+"]}]
+    "spaced-line-comment": [1, "always", {"exceptions":["-","+"]}],
+    "no-process-exit": 1
   },
   "env": {
     "node": true,

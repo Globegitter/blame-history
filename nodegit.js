@@ -1,8 +1,8 @@
 var Git = require('nodegit');
 
-module.exports = async function () {
+module.exports = async function (cmdArgs) {
   // console.log(process.cwd());
-  var filename = 'index.js';
+  var fileName = cmdArgs[0];
   var firstMasterCommit;
   try {
     firstMasterCommit = await Git.Repository.open('./').then(function (repository) {
@@ -14,68 +14,48 @@ module.exports = async function () {
 
   // console.log('firstMasterCommit', firstMasterCommit);
   var history = firstMasterCommit.history(Git.Revwalk.SORT.REVERSE);
-  // var commits = [];
-  // console.log(history);
-  // History emits "commit" event for each commit in the branch's history
-  // history.on("commit", function(commit) {
-  //   // console.log('on commit');
-  //   return commit.getDiff()
-  //   .then(function(diffList) {
-  //     // console.log(diffList);
-  //     var addCommit = diffList.reduce(function(prevVal, diff) {
-  //       // console.log('prevVal', prevVal);
-  //       // console.log('diff', diff);
-  //       var result =
-  //       prevVal ||
-  //       diff.patches().reduce(function(prevValDiff, patch) {
-  //         // console.log('diff.patches()', prevValDiff);
-  //         // console.log('patch', patch);
-  //         // console.log('patch oldFile', patch.oldFile().path());
-  //         // console.log('patch newFile', patch.newFile().path());
-  //         var result =
-  //         prevValDiff ||
-  //         !!~patch.oldFile().path().indexOf("descriptor.json") ||
-  //         !!~patch.newFile().path().indexOf("descriptor.json");
-  //
-  //         return result;
-  //       }, false);
-  //       // console.log('add comit', result);
-  //       return result;
-  //     }, false);
-  //
-  //     //if (addCommit) {
-  //       commits.push(commit);
-  //     //}
-  //   });
-  // });
-  //
-  // history.on("end", function() {
-  //   commits.forEach(function(commit) {
-  //     console.log("commit " + commit.sha());
-  //     console.log("Author:", commit.author().name() +
-  //     " <" + commit.author().email() + ">");
-  //     console.log("Date:", commit.date());
-  //     console.log("\n    " + commit.message());
-  //   });
-  // });
+  //var commits = [];
+
   history.on('commit', async function (commit) {
-    console.log();
-    console.log();
-    console.log('Date:', commit.date());
-    console.log(commit.message());
     var diffList = await commit.getDiff();
-    // console.log(diffList);
-    diffList.map(function (diff) {
-      diff.patches().map(function (patch) {
-        console.log('oldFile', patch.oldFile().path());
-        console.log('newFile', patch.newFile().path());
-      });
-    });
-    // console.log('commit ' + commit.sha());
-    // console.log('Author:', commit.author().name() +
-    // ' <' + commit.author().email() + '>');
-    // console.log('Date:', commit.date());
-    // console.log('\n    ' + commit.message());
+    var filePath = '';
+    console.log('whaaaa');
+    for (var diff of diffList) {
+      for (var patch of diff.patches()) {
+        //not sure why this check oldFile and newFile path, but the example did that.
+        var oldFilePath = patch.oldFile().path();
+        var newFilePath = patch.newFile().path();
+        console.log('---test---');
+        // console.log();
+        console.log();
+        console.log();
+        // console.log(patch.newFile().toString());
+        if (newFilePath.includes(fileName)) {
+          filePath = newFilePath;
+        } else if (oldFilePath.includes(fileName)) {
+          filePath = oldFilePath;
+        }
+
+        //found the file we are looking for
+        if (filePath.length > 0) {
+          //geting the file content
+          for (var hunk of patch.hunks()) {
+            console.log(hunk.header().trim());
+            //getting the file line-by-line
+            for (var line of hunk.lines()) {
+              console.log('lineOrigin', String.fromCharCode(line.origin()));
+              console.log('content', line.content().trim());
+            }
+          }
+          //found file so break out of for loop
+          break;
+        }
+      }
+      //found file in that commit, so break
+      if (filePath.length > 0) {
+        break;
+      }
+    }
   });
 
   // Don't forget to call `start()`!
