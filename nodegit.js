@@ -1,9 +1,32 @@
 var Git = require('nodegit');
 var { EOL } = require('os');
+var fs = require('fs');
 
 module.exports = async function (cmdArgs) {
-  // console.log(process.cwd());
+  // console.log(process.argv);
   var fileName = cmdArgs[0];
+  for (var i = 0; i < process.argv.length - 1; i++) {
+    if (process.argv[i] === '--file' || process.argv[i] === '-f') {
+      fileName = process.argv[i + 1];
+      break;
+    }
+  }
+
+  if (typeof fileName === 'undefined' || fileName === null || fileName.length === 0) {
+    var err = new Error('Please provide a valid filename');
+    err.name = 'NotValidFile';
+    throw err;
+  }
+
+  // Don't think this check is necessary since you could provide a filename from
+  // a previous revision
+  // if (!fs.statSync(fileName)) {
+  //   var err = new Error('Please provide a file that currently exists in your file sysyem.');
+  //   err.type = 'FileNotFound';
+  //   throw err;
+  // }
+
+  // console.log(process.cwd());
   var firstMasterCommit;
   try {
     firstMasterCommit = await Git.Repository.open('./').then(function (repository) {
