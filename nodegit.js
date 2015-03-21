@@ -2,6 +2,18 @@ var Git = require('nodegit');
 var { EOL } = require('os');
 var fs = require('fs');
 
+var printUtils = {
+    printCommit: function(commit) {
+        console.log();
+        console.log();
+        console.log(`Found file in commit ${commit.sha()}`);
+        console.log("Author:", commit.author().name() +
+            " <" + commit.author().email() + ">");
+        console.log("Date:", commit.date());
+        console.log("\n    " + commit.message());
+    },
+}
+
 module.exports = async function (cmdArgs) {
   // console.log(process.argv);
   var fileName = cmdArgs[0];
@@ -56,14 +68,8 @@ module.exports = async function (cmdArgs) {
 
         //found the file we are looking for
         if (filePath.length > 0) {
-          console.log();
-          console.log();
-          console.log(`Found file in commit ${commit.sha()}`);
-          console.log("Author:", commit.author().name() +
-         " <" + commit.author().email() + ">");
-          console.log("Date:", commit.date());
-          console.log("\n    " + commit.message());
-          console.log(`Showing hunk/diff for file ${filePath}`);
+            printUtils.printCommit(commit);
+         console.log(`Showing hunk/diff for file ${filePath}`);
           //geting the file content
           for (var hunk of patch.hunks()) {
             console.log('displayed hunk/diff size:', hunk.size());
