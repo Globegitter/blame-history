@@ -1,16 +1,36 @@
 var Git = require('nodegit');
 var { EOL } = require('os');
 var fs = require('fs');
+//provides some nicer logs function, such as only showing on the --verbose flag
+var logger = require('captains-log');
 
-module.exports = async function (cmdArgs) {
-  // console.log(process.argv);
-  var fileName = cmdArgs[0];
+function parseFileArg() {
+  var fileName = null;
   for (var i = 0; i < process.argv.length - 1; i++) {
     if (process.argv[i] === '--file' || process.argv[i] === '-f') {
       fileName = process.argv[i + 1];
       break;
     }
   }
+  return fileName;
+}
+
+async function getFirstMasterCommit(atPath) {
+  atPath = atPath || './';
+  try {
+    firstMasterCommit = await Git.Repository.open(atPath).then(function (repository) {
+      return repository.getMasterCommit();
+    });
+  } catch (err) {
+    throw new Error(err);
+  }
+}
+
+module.exports = async function (cmdArgs) {
+  var fileName = parseFileArg() || cmdArgs[0] || null;
+  //making it able for tests to set the level of logging at runtime
+  var log = logger(cmdArgs[1] || {});
+  var atPath = './';
 
   if (typeof fileName === 'undefined' || fileName === null || fileName.length === 0) {
     var err = new Error('Please provide a valid filename');
@@ -26,18 +46,8 @@ module.exports = async function (cmdArgs) {
   //   throw err;
   // }
 
-  // console.log(process.cwd());
-  var firstMasterCommit;
-  try {
-    firstMasterCommit = await Git.Repository.open('./').then(function (repository) {
-      return repository.getMasterCommit();
-    });
-  } catch (err) {
-    throw new Error(err);
-  }
-
-  // console.log('firstMasterCommit', firstMasterCommit);
-  var history = firstMasterCommit.history(Git.Revwalk.SORT.REVERSE);
+  var firstMasterCommit = await getFirstMasterCommit(atPath);
+  var history = firstMasterCommit.history(Git.Revwalk.SORT.TIME);
   //var commits = [];
 
   history.on('commit', async function (commit) {
@@ -56,25 +66,25 @@ module.exports = async function (cmdArgs) {
 
         //found the file we are looking for
         if (filePath.length > 0) {
-          console.log();
-          console.log();
-          console.log(`Found file in commit ${commit.sha()}`);
-          console.log("Author:", commit.author().name() +
+          log.verbose();
+          log.verbose();
+          log.verbose(`Found file in commit ${commit.sha()}`);
+          log.verbose("Author:", commit.author().name() +
          " <" + commit.author().email() + ">");
-          console.log("Date:", commit.date());
-          console.log("\n    " + commit.message());
-          console.log(`Showing hunk/diff for file ${filePath}`);
+          log.verbose("Date:", commit.date());
+          log.verbose("\n    " + commit.message());
+          log.verbose(`Showing hunk/diff for file ${filePath}`);
           //geting the file content
           for (var hunk of patch.hunks()) {
-            console.log('displayed hunk/diff size:', hunk.size());
-            console.log('header', hunk.header().trim());
+            log.verbose('displayed hunk/diff size:', hunk.size());
+            log.verbose('header', hunk.header().trim());
             var count = 1;
             //getting the file line-by-line
             for (var line of hunk.lines()) {
               var content = line.content();
-              // console.log('lineOrigin', String.fromCharCode(line.origin()));
-              console.log(count, String.fromCharCode(line.origin()) + ' ' + content.slice(0, content.indexOf(EOL)));
-              // console.log(count, String.fromCharCode(line.origin()) + ' ' + content);
+              // log.verbose('lineOrigin', String.fromCharCode(line.origin()));
+              log.verbose(count, String.fromCharCode(line.origin()) + ' ' + content.slice(0, content.indexOf(EOL)));
+              // log.verbose(count, String.fromCharCode(line.origin()) + ' ' + content);
               count++;
             }
           }
@@ -84,11 +94,19 @@ module.exports = async function (cmdArgs) {
       }
       //found file in that commit, so break
       if (filePath.length > 0) {
+        log.verbose('Breaking out of the for loop!' + commit.sha());
         break;
       }
     }
   });
 
+  history.on('end', function (){
+    //TODO: needs to resolve the promise here for the tests and return the final output
+    return null;
+  });
+
   // Don't forget to call `start()`!
   history.start();
+
+  return '';
 };

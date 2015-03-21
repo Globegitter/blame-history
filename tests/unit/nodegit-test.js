@@ -1,17 +1,16 @@
 /*global it, describe*/
 
-var { assert } = require('chai');
+var { expect } = require('chai');
 
 var nodegitFile = require('../../nodegit');
 
 describe('nodegit file', function () {
   it('works', async function () {
-    // var result = indexFile();
     try {
-      await nodegitFile(['tests/fixtures/example.txt']);
-      assert.ok(true);
+      await nodegitFile(['tests/fixtures/example.txt', { level: 'verbose' }]);
+      expect('everything').to.be.ok; //eslint-disable-line no-unused-expressions
     } catch (err){
-      assert.ok(false, err.stack);
+      expect('everything', err.stack).to.not.be.ok; //eslint-disable-line no-unused-expressions
     }
   });
 });
