@@ -12,6 +12,21 @@ var printUtils = {
         console.log("Date:", commit.date());
         console.log("\n    " + commit.message());
     },
+    printHunks: function(patch) {
+        for (var hunk of patch.hunks()) {
+            console.log('displayed hunk/diff size:', hunk.size());
+            console.log('header', hunk.header().trim());
+            var count = 1;
+            //getting the file line-by-line
+            for (var line of hunk.lines()) {
+                var content = line.content();
+                // console.log('lineOrigin', String.fromCharCode(line.origin()));
+                console.log(count, String.fromCharCode(line.origin()) + ' ' + content.slice(0, content.indexOf(EOL)));
+                // console.log(count, String.fromCharCode(line.origin()) + ' ' + content);
+                count++;
+            }
+        }
+    }
 }
 
 module.exports = async function (cmdArgs) {
@@ -69,23 +84,10 @@ module.exports = async function (cmdArgs) {
         //found the file we are looking for
         if (filePath.length > 0) {
             printUtils.printCommit(commit);
-         console.log(`Showing hunk/diff for file ${filePath}`);
-          //geting the file content
-          for (var hunk of patch.hunks()) {
-            console.log('displayed hunk/diff size:', hunk.size());
-            console.log('header', hunk.header().trim());
-            var count = 1;
-            //getting the file line-by-line
-            for (var line of hunk.lines()) {
-              var content = line.content();
-              // console.log('lineOrigin', String.fromCharCode(line.origin()));
-              console.log(count, String.fromCharCode(line.origin()) + ' ' + content.slice(0, content.indexOf(EOL)));
-              // console.log(count, String.fromCharCode(line.origin()) + ' ' + content);
-              count++;
-            }
-          }
-          //found file so break out of for loop
-          break;
+            console.log(`Showing hunk/diff for file ${filePath}`);
+            //geting the file content
+            printUtils.printHunks(patch);
+            break;
         }
       }
       //found file in that commit, so break
