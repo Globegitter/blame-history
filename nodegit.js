@@ -15,10 +15,13 @@ function parseFileArg() {
   return fileName;
 }
 
+//Note: Whenever you use an 'await' in a function, it needs to be async.
+//And you always need to put the await keyword before an async function call
+//so var
 async function getFirstMasterCommit(atPath) {
   atPath = atPath || './';
   try {
-    firstMasterCommit = await Git.Repository.open(atPath).then(function (repository) {
+    return firstMasterCommit = await Git.Repository.open(atPath).then(function (repository) {
       return repository.getMasterCommit();
     });
   } catch (err) {
@@ -47,7 +50,7 @@ module.exports = async function (cmdArgs) {
   // }
 
   var firstMasterCommit = await getFirstMasterCommit(atPath);
-  var history = firstMasterCommit.history(Git.Revwalk.SORT.TIME);
+  var history = firstMasterCommit.history(Git.Revwalk.SORT.REVERSE);
   //var commits = [];
 
   history.on('commit', async function (commit) {
