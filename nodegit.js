@@ -54,9 +54,11 @@ module.exports = async function (cmdArgs) {
   //var commits = [];
 
   history.on('commit', async function (commit) {
+    //Generate an array of diff trees showing changes between this commit and its parent(s).
     var diffList = await commit.getDiff();
     var filePath = '';
     for (var diff of diffList) {
+      //Retrieve patches (ConvenientPatches in nodegit) in this difflist
       for (var patch of diff.patches()) {
         //not sure why this check oldFile and newFile path, but the example did that.
         var oldFilePath = patch.oldFile().path();
@@ -77,12 +79,13 @@ module.exports = async function (cmdArgs) {
           log.verbose("Date:", commit.date());
           log.verbose("\n    " + commit.message());
           log.verbose(`Showing hunk/diff for file ${filePath}`);
-          //geting the file content
+          //getting the hunks (ConvenientHunk) in this patch
+          //that is the diff of this file
           for (var hunk of patch.hunks()) {
             log.verbose('displayed hunk/diff size:', hunk.size());
             log.verbose('header', hunk.header().trim());
             var count = 1;
-            //getting the file line-by-line
+            //getting the diff content line-by-line
             for (var line of hunk.lines()) {
               var content = line.content();
               // log.verbose('lineOrigin', String.fromCharCode(line.origin()));
