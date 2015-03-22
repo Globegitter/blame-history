@@ -7,9 +7,8 @@ var logger = require('captains-log');
 function getNewRevisionLines(hunkHeader) {
     var start = hunkHeader.indexOf('+') + 1;
     hunkHeader = hunkHeader.slice(start, hunkHeader.length-1);
-
     var end = hunkHeader.indexOf('@') - 1;
-    var content = hunkHeader.slice(start, end);
+    var content = hunkHeader.slice(0, end);
     var contentSplit = content.split(',');
     return {
         start : contentSplit[0],
@@ -134,7 +133,9 @@ module.exports = async function (cmdArgs) {
           for (var hunk of patch.hunks()) {
             log.verbose('displayed hunk/diff size:', hunk.size());
             log.verbose('header', hunk.header().trim());
-            hunkHeader = interpretHunkHeader(hunk.header().trim());
+            var hunkHeader = interpretHunkHeader(hunk.header().trim());
+            log.verbose(hunkHeader);
+
             var count = 1;
             //getting the diff content line-by-line
             for (var line of hunk.lines()) {

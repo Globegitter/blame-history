@@ -28,4 +28,4 @@ node_modules
 .lock-wscript
 
 # Vim swap files
-.swp
+*.swp
