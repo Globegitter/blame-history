@@ -4,6 +4,49 @@ var fs = require('fs');
 //provides some nicer logs function, such as only showing on the --verbose flag
 var logger = require('captains-log');
 
+function getNewRevisionLines(hunkHeader) {
+    var start = hunkHeader.indexOf('+') + 1;
+    hunkHeader = hunkHeader.slice(start, hunkHeader.length-1);
+
+    var end = hunkHeader.indexOf('@') - 1;
+    var content = hunkHeader.slice(start, end);
+    var contentSplit = content.split(',');
+    return {
+        start : contentSplit[0],
+        length : contentSplit[1]
+    };
+}
+
+function getOldRevisionLines(hunkHeader) {
+    var start = hunkHeader.indexOf('-') + 1;
+    var end = hunkHeader.indexOf('+') - 1;
+    var content = hunkHeader.slice(start, end);
+    var contentSplit = content.split(',');
+    return {
+        start : contentSplit[0],
+        length : contentSplit[1]
+    };
+}
+
+// Extract info from the hunkHeader into an object
+function interpretHunkHeader(hunkHeader) {
+    var oldLines = getOldRevisionLines(hunkHeader);
+    var newLines = getNewRevisionLines(hunkHeader);
+    return {
+        oldRevision: oldLines,
+        newRevision: newLines
+    };
+}
+
+function removedLineBlame(previousBlame, newDiff) {
+    //TODO:
+}
+
+function addedLineBlame(previousBlame, hunk) {
+    if (previousBlame.length = 0) {
+    }
+}
+
 function parseFileArg() {
   var fileName = null;
   for (var i = 0; i < process.argv.length - 1; i++) {
@@ -52,6 +95,8 @@ module.exports = async function (cmdArgs) {
   var firstMasterCommit = await getFirstMasterCommit(atPath);
   var history = firstMasterCommit.history(Git.Revwalk.SORT.REVERSE);
   //var commits = [];
+  //
+  var runningBlame = [];
 
   history.on('commit', async function (commit) {
 
@@ -89,6 +134,7 @@ module.exports = async function (cmdArgs) {
           for (var hunk of patch.hunks()) {
             log.verbose('displayed hunk/diff size:', hunk.size());
             log.verbose('header', hunk.header().trim());
+            hunkHeader = interpretHunkHeader(hunk.header().trim());
             var count = 1;
             //getting the diff content line-by-line
             for (var line of hunk.lines()) {
@@ -103,7 +149,6 @@ module.exports = async function (cmdArgs) {
           break;
         }
       }
-
       //found file in that commit, so break
       if (filePath.length > 0) {
         break;
