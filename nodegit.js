@@ -17,11 +17,11 @@ function parseFileArg() {
 
 //Note: Whenever you use an 'await' in a function, it needs to be async.
 //And you always need to put the await keyword before an async function call
-//so var
+//so var firstMasterCommit = await getFirstMasterCommit();
 async function getFirstMasterCommit(atPath) {
   atPath = atPath || './';
   try {
-    return firstMasterCommit = await Git.Repository.open(atPath).then(function (repository) {
+    return Git.Repository.open(atPath).then(function (repository) {
       return repository.getMasterCommit();
     });
   } catch (err) {
@@ -54,13 +54,17 @@ module.exports = async function (cmdArgs) {
   //var commits = [];
 
   history.on('commit', async function (commit) {
+
     //Generate an array of diff trees showing changes between this commit and its parent(s).
+    //This is essentially the same as 'git diff <parentCommitId> <childCommitId>'
     var diffList = await commit.getDiff();
     var filePath = '';
+
     for (var diff of diffList) {
+
       //Retrieve patches (ConvenientPatches in nodegit) in this difflist
       for (var patch of diff.patches()) {
-        //not sure why this check oldFile and newFile path, but the example did that.
+        //not sure why to check oldFile and newFile path, but library example did so.
         var oldFilePath = patch.oldFile().path();
         var newFilePath = patch.newFile().path();
         if (newFilePath.includes(fileName)) {
@@ -79,6 +83,7 @@ module.exports = async function (cmdArgs) {
           log.verbose("Date:", commit.date());
           log.verbose("\n    " + commit.message());
           log.verbose(`Showing hunk/diff for file ${filePath}`);
+
           //getting the hunks (ConvenientHunk) in this patch
           //that is the diff of this file
           for (var hunk of patch.hunks()) {
@@ -98,9 +103,9 @@ module.exports = async function (cmdArgs) {
           break;
         }
       }
+
       //found file in that commit, so break
       if (filePath.length > 0) {
-        log.verbose('Breaking out of the for loop!' + commit.sha());
         break;
       }
     }
