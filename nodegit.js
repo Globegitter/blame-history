@@ -190,6 +190,11 @@ module.exports = async function (cmdArgs) {
   var history = firstMasterCommit.history(Git.Revwalk.SORT.REVERSE);
   //var commits = [];
   //
+  function printBlame(blame) {
+      for (var lineBlame of blame) {
+          console.log(lineBlame.commit.join() + ': ' + lineBlame.line);
+      }
+  }
 
   history.on('commit', async function (commit) {
 
@@ -227,7 +232,6 @@ module.exports = async function (cmdArgs) {
             log.verbose('displayed hunk/diff size:', hunk.size());
             log.verbose('header', hunk.header().trim());
             runningBlame = applyRules(runningBlame, hunk, commit.sha());
-            log.verbose(runningBlame);
             var count = 1;
             //getting the diff content line-by-line
             for (var line of hunk.lines()) {
@@ -248,7 +252,7 @@ module.exports = async function (cmdArgs) {
   });
 
   history.on('end', function (){
-    //TODO: needs to resolve the promise here for the tests and return the final output
+    printBlame(runningBlame);
     return null;
   });
 
