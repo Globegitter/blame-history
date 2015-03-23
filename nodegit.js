@@ -61,7 +61,7 @@ function addedLineBlame(runningBlame, newHunk, commitHash) {
         }
         return newBlame;
     } else {
-        // Previous blame is not empty, will need to insert new line to 
+        // Previous blame is not empty, will need to insert new line to
         // position provided by the hunk header
         var header = interpretHunkHeader(newHunk.header());
         var newIndex = header.newRevision.start;
@@ -83,15 +83,16 @@ function addedLineBlame(runningBlame, newHunk, commitHash) {
     //TODO: Need to deal with addition/deletion mix
 }
 
-function parseFileArg() {
-  var fileName = null;
+//if you pass 'file' it looks for the flag '--file' or '-f'
+function parseArg(type) {
+  var argVal = null;
   for (var i = 0; i < process.argv.length - 1; i++) {
-    if (process.argv[i] === '--file' || process.argv[i] === '-f') {
-      fileName = process.argv[i + 1];
+    if (process.argv[i] === `--${type}` || process.argv[i] === `-${type.slice(0, 1)}`) {
+      argVal = process.argv[i + 1];
       break;
     }
   }
-  return fileName;
+  return argVal;
 }
 
 //Note: Whenever you use an 'await' in a function, it needs to be async.
@@ -109,10 +110,10 @@ async function getFirstMasterCommit(atPath) {
 }
 
 module.exports = async function (cmdArgs) {
-  var fileName = parseFileArg() || cmdArgs[0] || null;
+  var fileName = parseArg('file') || cmdArgs[0] || null;
+  var atPath = parseArg('path') || './';
   //making it able for tests to set the level of logging at runtime
   var log = logger(cmdArgs[1] || {});
-  var atPath = './';
   var runningBlame = [];
 
   if (typeof fileName === 'undefined' || fileName === null || fileName.length === 0) {
