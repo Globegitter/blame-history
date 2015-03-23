@@ -40,9 +40,14 @@ function interpretHunkHeader(hunkHeader) {
 function removedLineBlame(previousBlame, newDiff, hunkLinesInfo) {
 }
 
+function getLineContentFromLine(line) {
+    var content = line.content();
+    return content.slice(0, content.indexOf(EOL));
+}
+
 function addedLineBlame(runningBlame, newHunk, commitHash) {
-    // If previous blame is empty, i.e. dealing with initial commit
     if (runningBlame.length == 0) {
+        // If previous blame is empty, i.e. dealing with initial commit
         var newBlame = [];
         for (var line of newHunk.lines()) {
             var a = 'hello';
@@ -56,9 +61,26 @@ function addedLineBlame(runningBlame, newHunk, commitHash) {
         }
         return newBlame;
     } else {
-        // TODO: If not first commit, add lines after index
+        // Previous blame is not empty, will need to insert new line to 
+        // position provided by the hunk header
+        var header = interpretHunkHeader(newHunk.header());
+        var newIndex = header.newRevision.start;
+        var counter = 0;
+        for (var line of newHunk.lines()) {
+            var origin = String.fromCharCode(line.origin());
+            if (origin == '+') {
+                var content = getLineContentFromLine(line);
+                var lineBlame = {
+                    commit: [commitHash],
+                    line: content
+                }
+                runningBlame.splice(newIndex + counter, 0, lineBlame);
+            }
+            counter++;
+        }
         return runningBlame;
     }
+    //TODO: Need to deal with addition/deletion mix
 }
 
 function parseFileArg() {
@@ -148,6 +170,8 @@ module.exports = async function (cmdArgs) {
           for (var hunk of patch.hunks()) {
             log.verbose('displayed hunk/diff size:', hunk.size());
             log.verbose('header', hunk.header().trim());
+            runningBlame = addedLineBlame(runningBlame, hunk, commit.sha());
+            log.verbose(runningBlame);
             var count = 1;
             //getting the diff content line-by-line
             for (var line of hunk.lines()) {
