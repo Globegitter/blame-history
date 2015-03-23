@@ -92,7 +92,6 @@ function addedLineBlame(runningBlame, newHunk, commitHash) {
         // If previous blame is empty, i.e. dealing with initial commit
         var newBlame = [];
         for (var line of newHunk.lines()) {
-            var a = 'hello';
             var content = line.content();
             content = content.slice(0, content.indexOf(EOL));
             var lineBlame = {
@@ -106,23 +105,38 @@ function addedLineBlame(runningBlame, newHunk, commitHash) {
         // Previous blame is not empty, will need to insert new line to
         // position provided by the hunk header
         var header = interpretHunkHeader(newHunk.header());
-        var newIndex = header.newRevision.start;
+        var newIndex = header.newRevision.start - 1;
         var counter = 0;
+        var deleteCounter = 0;
         for (var line of newHunk.lines()) {
             var origin = String.fromCharCode(line.origin());
             if (origin == '+') {
                 var content = getLineContentFromLine(line);
-                var lineBlame = {
-                    commit: [commitHash],
-                    line: content
+                if (deleteCounter == 0) {
+                    var lineBlame = {
+                        commit: [commitHash],
+                        line: content
+                    }
+                    runningBlame.splice(newIndex + counter, 0, lineBlame);
+                } else {
+                    var indexBlame = runningBlame[newIndex + counter];
+                    indexBlame.commit.push(commitHash);
+                    var lineBlame = {
+                        commit: indexBlame.commit,
+                        line: content
+                    };
+                    runningBlame[newIndex + counter] = lineBlame;
+                    deleteCounter--;
                 }
-                runningBlame.splice(newIndex + counter, 0, lineBlame);
+                counter++;
+            } else if (origin == '-') {
+                deleteCounter++;
+            } else {
+                counter++;
             }
-            counter++;
         }
         return runningBlame;
     }
-    //TODO: Need to deal with addition/deletion mix
 }
 
 //if you pass 'file' it looks for the flag '--file' or '-f'
