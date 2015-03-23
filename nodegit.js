@@ -27,7 +27,7 @@ function getOldRevisionLines(hunkHeader) {
     };
 }
 
-// Extract info from the hunkHeader into an object
+// Extract info from the hunk header into an object
 function interpretHunkHeader(hunkHeader) {
     var oldLines = getOldRevisionLines(hunkHeader);
     var newLines = getNewRevisionLines(hunkHeader);
@@ -37,12 +37,27 @@ function interpretHunkHeader(hunkHeader) {
     };
 }
 
-function removedLineBlame(previousBlame, newDiff) {
-    //TODO:
+function removedLineBlame(previousBlame, newDiff, hunkLinesInfo) {
 }
 
-function addedLineBlame(previousBlame, hunk) {
-    if (previousBlame.length = 0) {
+function addedLineBlame(runningBlame, newHunk, commitHash) {
+    // If previous blame is empty, i.e. dealing with initial commit
+    if (runningBlame.length == 0) {
+        var newBlame = [];
+        for (var line of newHunk.lines()) {
+            var a = 'hello';
+            var content = line.content();
+            content = content.slice(0, content.indexOf(EOL));
+            var lineBlame = {
+                commit: [commitHash],
+                line: content
+            };
+            newBlame.push(lineBlame);
+        }
+        return newBlame;
+    } else {
+        // TODO: If not first commit, add lines after index
+        return runningBlame;
     }
 }
 
@@ -76,6 +91,7 @@ module.exports = async function (cmdArgs) {
   //making it able for tests to set the level of logging at runtime
   var log = logger(cmdArgs[1] || {});
   var atPath = './';
+  var runningBlame = [];
 
   if (typeof fileName === 'undefined' || fileName === null || fileName.length === 0) {
     var err = new Error('Please provide a valid filename');
@@ -95,7 +111,6 @@ module.exports = async function (cmdArgs) {
   var history = firstMasterCommit.history(Git.Revwalk.SORT.REVERSE);
   //var commits = [];
   //
-  var runningBlame = [];
 
   history.on('commit', async function (commit) {
 
@@ -133,16 +148,11 @@ module.exports = async function (cmdArgs) {
           for (var hunk of patch.hunks()) {
             log.verbose('displayed hunk/diff size:', hunk.size());
             log.verbose('header', hunk.header().trim());
-            var hunkHeader = interpretHunkHeader(hunk.header().trim());
-            log.verbose(hunkHeader);
-
             var count = 1;
             //getting the diff content line-by-line
             for (var line of hunk.lines()) {
               var content = line.content();
-              // log.verbose('lineOrigin', String.fromCharCode(line.origin()));
               log.verbose(count, String.fromCharCode(line.origin()) + ' ' + content.slice(0, content.indexOf(EOL)));
-              // log.verbose(count, String.fromCharCode(line.origin()) + ' ' + content);
               count++;
             }
           }
