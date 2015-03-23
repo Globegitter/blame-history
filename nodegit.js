@@ -11,8 +11,8 @@ function getNewRevisionLines(hunkHeader) {
     var content = hunkHeader.slice(0, end);
     var contentSplit = content.split(',');
     return {
-        start : contentSplit[0],
-        length : contentSplit[1]
+        start : parseInt(contentSplit[0]),
+        length : parseInt(contentSplit[1])
     };
 }
 
@@ -22,8 +22,8 @@ function getOldRevisionLines(hunkHeader) {
     var content = hunkHeader.slice(start, end);
     var contentSplit = content.split(',');
     return {
-        start : contentSplit[0],
-        length : contentSplit[1]
+        start : parseInt(contentSplit[0]),
+        length : parseInt(contentSplit[1]),
     };
 }
 
@@ -37,13 +37,55 @@ function interpretHunkHeader(hunkHeader) {
     };
 }
 
-function removedLineBlame(previousBlame, newDiff, hunkLinesInfo) {
+function applyRules(runningBlame, newHunk, commitHash) {
+    // delegate the rules according to the hunk header
+    var hunkHeader = interpretHunkHeader(newHunk.header());
+    // TODO: Look at the difference between - and + from the hunk lines 
+    // this would reveal whether it's purely add/remove or a mixture of the two.
+    if (hunkHeader.oldRevision.length == hunkHeader.newRevision.length) {
+        // Same length, thus a change took place
+        var changedLine = changedLineBlame(runningBlame, newHunk, commitHash);
+        return changedLine
+    } else if (hunkHeader.oldRevision.length < hunkHeader.newRevision.length) {
+        return addedLineBlame(runningBlame, newHunk, commitHash);
+    }
 }
 
 function getLineContentFromLine(line) {
     var content = line.content();
     return content.slice(0, content.indexOf(EOL));
 }
+
+function changedLineBlame(runningBlame, newHunk, commitHash) {
+    var hunkHeader = interpretHunkHeader(newHunk.header());
+    var newIndex = hunkHeader.newRevision.start - 1;
+    var counter = 0; // deals with the offset
+    for (var line of newHunk.lines()) {
+        var origin = String.fromCharCode(line.origin());
+        if (origin == '-') {
+            // The line being replaced, not sure if we need to do anything
+            // No increment
+        } else if (origin == '+') {
+            // Line needs to be changed
+            var indexBlame = runningBlame[newIndex + counter];
+            indexBlame.commit.push(commitHash);
+            var content = getLineContentFromLine(line);
+            var lineBlame = {
+                commit: indexBlame.commit,
+                line: content
+            };
+            runningBlame[newIndex + counter] = lineBlame;
+            counter++;
+        } else {
+            counter++;
+        }
+    }
+    return runningBlame;
+}
+
+function removedLineBlame(runningBlame, newHunk, commitHash) {
+}
+
 
 function addedLineBlame(runningBlame, newHunk, commitHash) {
     if (runningBlame.length == 0) {
@@ -143,7 +185,6 @@ module.exports = async function (cmdArgs) {
     var filePath = '';
 
     for (var diff of diffList) {
-
       //Retrieve patches (ConvenientPatches in nodegit) in this difflist
       for (var patch of diff.patches()) {
         //not sure why to check oldFile and newFile path, but library example did so.
@@ -171,7 +212,7 @@ module.exports = async function (cmdArgs) {
           for (var hunk of patch.hunks()) {
             log.verbose('displayed hunk/diff size:', hunk.size());
             log.verbose('header', hunk.header().trim());
-            runningBlame = addedLineBlame(runningBlame, hunk, commit.sha());
+            runningBlame = applyRules(runningBlame, hunk, commit.sha());
             log.verbose(runningBlame);
             var count = 1;
             //getting the diff content line-by-line
