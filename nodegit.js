@@ -1,8 +1,10 @@
 var Git = require('nodegit');
 var { EOL } = require('os');
 var fs = require('fs');
+var path = require('path');
 //provides some nicer logs function, such as only showing on the --verbose flag
 var logger = require('captains-log');
+var gitRoot = '';
 
 function getNewRevisionLines(hunkHeader) {
     var start = hunkHeader.indexOf('+') + 1;
@@ -40,7 +42,7 @@ function interpretHunkHeader(hunkHeader) {
 function applyRules(runningBlame, newHunk, commitHash) {
     // delegate the rules according to the hunk header
     var hunkHeader = interpretHunkHeader(newHunk.header());
-    // TODO: Look at the difference between - and + from the hunk lines 
+    // TODO: Look at the difference between - and + from the hunk lines
     // this would reveal whether it's purely add/remove or a mixture of the two.
     if (hunkHeader.oldRevision.length == hunkHeader.newRevision.length) {
         // Same length, thus a change took place
@@ -142,6 +144,12 @@ function addedLineBlame(runningBlame, newHunk, commitHash) {
 //if you pass 'file' it looks for the flag '--file' or '-f'
 function parseArg(type) {
   var argVal = null;
+  if (type === 'file' && process.argv.length > 2) {
+    //if there is no -- at all in the string or at a point later, within the filename
+    if (process.argv[2].indexOf('--') === -1 || process.argv[2].indexOf('--') > 0) {
+      return process.argv[2]
+    }
+  }
   for (var i = 0; i < process.argv.length - 1; i++) {
     if (process.argv[i] === `--${type}` || process.argv[i] === `-${type.slice(0, 1)}`) {
       argVal = process.argv[i + 1];
@@ -153,12 +161,15 @@ function parseArg(type) {
 
 //Note: Whenever you use an 'await' in a function, it needs to be async.
 //And you always need to put the await keyword before an async function call
-//so var firstMasterCommit = await getFirstMasterCommit();
+//so var [firstMasterCommit, gitRoot] = await getFirstMasterCommit();
 async function getFirstMasterCommit(atPath) {
   atPath = atPath || './';
   try {
-    return Git.Repository.open(atPath).then(function (repository) {
+    return Git.Repository.openExt(path.dirname(atPath), 0, '').then(function (repository) {
+      gitRoot = path.dirname(repository.path());
       return repository.getMasterCommit();
+    }).catch(function (err) {
+      throw err;
     });
   } catch (err) {
     throw new Error(err);
@@ -167,7 +178,7 @@ async function getFirstMasterCommit(atPath) {
 
 module.exports = async function (cmdArgs) {
   var fileName = parseArg('file') || cmdArgs[0] || null;
-  var atPath = parseArg('path') || './';
+  var atPath = parseArg('file') || './';
   //making it able for tests to set the level of logging at runtime
   var log = logger(cmdArgs[1] || {});
   var runningBlame = [];
@@ -187,6 +198,8 @@ module.exports = async function (cmdArgs) {
   // }
 
   var firstMasterCommit = await getFirstMasterCommit(atPath);
+  fileName = path.relative(gitRoot, fileName).trim();
+  console.log(fileName.trim());
   var history = firstMasterCommit.history(Git.Revwalk.SORT.REVERSE);
   //var commits = [];
   //
@@ -197,7 +210,6 @@ module.exports = async function (cmdArgs) {
   }
 
   history.on('commit', async function (commit) {
-
     //Generate an array of diff trees showing changes between this commit and its parent(s).
     //This is essentially the same as 'git diff <parentCommitId> <childCommitId>'
     var diffList = await commit.getDiff();
