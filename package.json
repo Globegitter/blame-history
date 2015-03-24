@@ -2,7 +2,7 @@
   "name": "blame-history",
   "version": "0.1.0",
   "description": "A tool that analyses the commit history for a file and builds a history for every line in that file.",
-  "main": "index.js",
+  "main": "nodegit.js",
   "scripts": {
     "test": "node tests/runner"
   },
