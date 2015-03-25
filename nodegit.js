@@ -69,6 +69,7 @@ function removedLineBlame(runningBlame, newHunk, commitHash) {
 function applyRules(runningBlame, newHunk, commitHash) {
     // delegate the rules according to the hunk header
     var hunkHeader = interpretHunkHeader(newHunk.header());
+    commitHash = commitHash.slice(0,7);
     // this would reveal whether it's purely add/remove or a mixture of the two.
     if (hunkHeader.oldRevision.length == hunkHeader.newRevision.length) {
         return changedLineBlame(runningBlame, newHunk, commitHash);
