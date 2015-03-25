@@ -204,9 +204,14 @@ module.exports = async function (cmdArgs) {
   //var commits = [];
   //
   function printBlame(blame) {
-      for (var lineBlame of blame) {
-          console.log(lineBlame.commit.join() + ': ' + lineBlame.line);
-      }
+    //save the print in a string so we can return it.
+    var printedBlame = '';
+    for (var lineBlame of blame) {
+      printedBlame += lineBlame.commit.join() + ': ' + lineBlame.line + EOL
+    }
+    //like console.log but without a trailing newline
+    process.stdout.write(printedBlame);
+    return printedBlame;
   }
 
   history.on('commit', async function (commit) {
@@ -263,13 +268,20 @@ module.exports = async function (cmdArgs) {
     }
   });
 
-  history.on('end', function (){
-    printBlame(runningBlame);
-    return null;
+  //Promises are needed to return something from within a callback function.
+  var promise = new Promise(function (resolve, reject){
+    history.on('end', function () {
+      var printedBlame = printBlame(runningBlame);
+      resolve(printedBlame);
+    });
+
+    history.on('error', function(error) {
+      reject(error);
+    });
+
+    // Don't forget to call `start()`!
+    history.start();
   });
 
-  // Don't forget to call `start()`!
-  history.start();
-
-  return '';
+  return promise;
 };
