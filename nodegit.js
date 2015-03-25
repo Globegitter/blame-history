@@ -39,17 +39,43 @@ function interpretHunkHeader(hunkHeader) {
     };
 }
 
+// Dealing with the condition where lines
+function removedLineBlame(runningBlame, newHunk, commitHash) {
+    var hunkHeader = interpretHunkHeader(newHunk.header());
+    var newIndex = hunkHeader.newRevision.start - 1;
+    var counter = 0;
+    for (var line of newHunk.lines()) {
+        var origin = String.fromCharCode(line.origin());
+        if (origin == '-') {
+            // Remove the elemnt at index
+            runningBlame.splice(newIndex + counter, 1)
+        } else if (origin == '+') {
+            var indexBlame = runningBlame[newIndex + counter];
+            indexBlame.commit.push(commitHash);
+            var content = getLineContentFromLine(line);
+            var lineBlame = {
+                commit: indexBlame.commit,
+                line: content
+            };
+            runningBlame.splice(newIndex + counter, 0, lineBlame);
+            counter++;
+        } else {
+            counter++;
+        }
+    }
+    return runningBlame;
+}
+
 function applyRules(runningBlame, newHunk, commitHash) {
     // delegate the rules according to the hunk header
     var hunkHeader = interpretHunkHeader(newHunk.header());
-    // TODO: Look at the difference between - and + from the hunk lines
     // this would reveal whether it's purely add/remove or a mixture of the two.
     if (hunkHeader.oldRevision.length == hunkHeader.newRevision.length) {
-        // Same length, thus a change took place
-        var changedLine = changedLineBlame(runningBlame, newHunk, commitHash);
-        return changedLine
+        return changedLineBlame(runningBlame, newHunk, commitHash);
     } else if (hunkHeader.oldRevision.length < hunkHeader.newRevision.length) {
         return addedLineBlame(runningBlame, newHunk, commitHash);
+    } else {
+        return removedLineBlame(runningBlame, newHunk, commitHash);
     }
 }
 
@@ -85,8 +111,6 @@ function changedLineBlame(runningBlame, newHunk, commitHash) {
     return runningBlame;
 }
 
-function removedLineBlame(runningBlame, newHunk, commitHash) {
-}
 
 
 function addedLineBlame(runningBlame, newHunk, commitHash) {
