@@ -7,4 +7,4 @@ Make sure you have the latest [io.js](https://iojs.org/en/index.html) installed 
 
 To test with another file, or another repository you can run `npm test -- --file test.js`.
 
-Or simply do `node run.js [--file <filename> --path <repositoryPath>]`.
+Or simply do `node run.js [--file <filename>]` or `node run.js <filename>`.
