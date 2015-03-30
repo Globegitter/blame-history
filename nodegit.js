@@ -294,7 +294,7 @@ module.exports = async function (cmdArgs) {
             log.verbose('displayed hunk/diff size:', hunk.size());
             log.verbose('header', hunk.header().trim());
             runningBlame = applyRules(runningBlame, hunk, commit.sha());
-            console.log(runningBlame);
+            //console.log(runningBlame);
             var count = 1;
             //getting the diff content line-by-line
             for (var line of hunk.lines()) {
