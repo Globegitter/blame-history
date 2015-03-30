@@ -40,26 +40,28 @@ function interpretHunkHeader(hunkHeader) {
 
 // Dealing with the condition where lines
 function removedLineBlame(runningBlame, newHunk, commitHash) {
-  var hunkHeader = interpretHunkHeader(newHunk.header());
-  var newIndex = hunkHeader.newRevision.start - 1;
-  var counter = 0;
-  for (var line of newHunk.lines()) {
-    var origin = String.fromCharCode(line.origin());
-    if (origin === '-') {
-      // Remove the elemnt at index
-      runningBlame.splice(newIndex + counter, 1);
-    } else if (origin === '+') {
-      var indexBlame = runningBlame[newIndex + counter];
-      indexBlame.commit.push(commitHash);
-      var content = getLineContentFromLine(line);
-      var lineBlame = {
-        commit: indexBlame.commit,
-        line: content
-      };
-      runningBlame.splice(newIndex + counter, 0, lineBlame);
-      counter++;
-    } else {
-      counter++;
+    var hunkHeader = interpretHunkHeader(newHunk.header());
+    var newIndex = hunkHeader.newRevision.start - 1;
+    var counter = 0;
+    for (var line of newHunk.lines()) {
+        var origin = String.fromCharCode(line.origin());
+        if (origin == '-') {
+            // Remove the elemnt at index
+            runningBlame.splice(newIndex + counter, 1)
+        } else if (origin == '+') {
+            var indexBlame = runningBlame[newIndex + counter];
+            var runningCommit = indexBlame.commit.slice();
+            runningCommit.push(commitHash);
+            var content = getLineContentFromLine(line);
+            var lineBlame = {
+                commit: runningCommit,
+                line: content
+            };
+            runningBlame.splice(newIndex + counter, 0, lineBlame);
+            counter++;
+        } else {
+            counter++;
+        }
     }
   }
   return runningBlame;
@@ -293,6 +295,7 @@ module.exports = async function (cmdArgs) {
             log.verbose('displayed hunk/diff size:', hunk.size());
             log.verbose('header', hunk.header().trim());
             runningBlame = applyRules(runningBlame, hunk, commit.sha());
+            console.log(runningBlame);
             var count = 1;
             //getting the diff content line-by-line
             for (var line of hunk.lines()) {
