@@ -135,19 +135,31 @@ function addedLineBlame(runningBlame, newHunk, commitHash) {
         var newIndex = header.newRevision.start - 1;
         var counter = 0;
         var deleteCounter = 0;
+        var lineDeleted = false;
+        // Quick fix
+        var runningCommitSHA = [];
         for (var line of newHunk.lines()) {
             var origin = String.fromCharCode(line.origin());
             if (origin == '+') {
                 var content = getLineContentFromLine(line);
                 if (deleteCounter == 0) {
-                    var lineBlame = {
-                        commit: [commitHash],
-                        line: content
+                    var lineBlame;
+                    if (lineDeleted) {
+                        var lineBlame = {
+                            commit: runningCommitSHA,
+                            line: content
+                        }
+                    } else {
+                        var lineBlame = {
+                            commit: [commitHash],
+                            line: content
+                        }
                     }
                     runningBlame.splice(newIndex + counter, 0, lineBlame);
                 } else {
                     var indexBlame = runningBlame[newIndex + counter];
                     indexBlame.commit.push(commitHash);
+                    runningCommitSHA = indexBlame.commit;
                     var lineBlame = {
                         commit: indexBlame.commit,
                         line: content
@@ -157,6 +169,7 @@ function addedLineBlame(runningBlame, newHunk, commitHash) {
                 }
                 counter++;
             } else if (origin == '-') {
+                lineDeleted = true;
                 deleteCounter++;
             } else {
                 counter++;
