@@ -218,7 +218,7 @@ async function getFirstMasterCommit(atPath) {
   }
 }
 
-module.exports = async function (cmdArgs) {
+module.exports = async function main(cmdArgs) {
   var fileName = parseArg('file') || cmdArgs[0] || null;
   var atPath = parseArg('file') || './';
   //making it able for tests to set the level of logging at runtime
@@ -259,7 +259,7 @@ module.exports = async function (cmdArgs) {
     return printedBlame;
   }
 
-  history.on('commit', async function (commit) {
+  history.on('commit', async function walkHistory(commit) {
     //Generate an array of diff trees showing changes between this commit and its parent(s).
     //This is essentially the same as 'git diff <parentCommitId> <childCommitId>'
     var diffList = await commit.getDiff();
