@@ -7,176 +7,176 @@ var logger = require('captains-log');
 var gitRoot = '';
 
 function getNewRevisionLines(hunkHeader) {
-    var start = hunkHeader.indexOf('+') + 1;
-    hunkHeader = hunkHeader.slice(start, hunkHeader.length-1);
-    var end = hunkHeader.indexOf('@') - 1;
-    var content = hunkHeader.slice(0, end);
-    var contentSplit = content.split(',');
-    return {
-        start : parseInt(contentSplit[0]),
-        length : parseInt(contentSplit[1])
-    };
+  var start = hunkHeader.indexOf('+') + 1;
+  hunkHeader = hunkHeader.slice(start, hunkHeader.length-1);
+  var end = hunkHeader.indexOf('@') - 1;
+  var content = hunkHeader.slice(0, end);
+  var contentSplit = content.split(',');
+  return {
+    start : parseInt(contentSplit[0]),
+    length : parseInt(contentSplit[1])
+  };
 }
 
 function getOldRevisionLines(hunkHeader) {
-    var start = hunkHeader.indexOf('-') + 1;
-    var end = hunkHeader.indexOf('+') - 1;
-    var content = hunkHeader.slice(start, end);
-    var contentSplit = content.split(',');
-    return {
-        start : parseInt(contentSplit[0]),
-        length : parseInt(contentSplit[1]),
-    };
+  var start = hunkHeader.indexOf('-') + 1;
+  var end = hunkHeader.indexOf('+') - 1;
+  var content = hunkHeader.slice(start, end);
+  var contentSplit = content.split(',');
+  return {
+    start : parseInt(contentSplit[0]),
+    length : parseInt(contentSplit[1]),
+  };
 }
 
 // Extract info from the hunk header into an object
 function interpretHunkHeader(hunkHeader) {
-    var oldLines = getOldRevisionLines(hunkHeader);
-    var newLines = getNewRevisionLines(hunkHeader);
-    return {
-        oldRevision: oldLines,
-        newRevision: newLines
-    };
+  var oldLines = getOldRevisionLines(hunkHeader);
+  var newLines = getNewRevisionLines(hunkHeader);
+  return {
+    oldRevision: oldLines,
+    newRevision: newLines
+  };
 }
 
 // Dealing with the condition where lines
 function removedLineBlame(runningBlame, newHunk, commitHash) {
-    var hunkHeader = interpretHunkHeader(newHunk.header());
-    var newIndex = hunkHeader.newRevision.start - 1;
-    var counter = 0;
-    for (var line of newHunk.lines()) {
-        var origin = String.fromCharCode(line.origin());
-        if (origin == '-') {
-            // Remove the elemnt at index
-            runningBlame.splice(newIndex + counter, 1)
-        } else if (origin == '+') {
-            var indexBlame = runningBlame[newIndex + counter];
-            indexBlame.commit.push(commitHash);
-            var content = getLineContentFromLine(line);
-            var lineBlame = {
-                commit: indexBlame.commit,
-                line: content
-            };
-            runningBlame.splice(newIndex + counter, 0, lineBlame);
-            counter++;
-        } else {
-            counter++;
-        }
+  var hunkHeader = interpretHunkHeader(newHunk.header());
+  var newIndex = hunkHeader.newRevision.start - 1;
+  var counter = 0;
+  for (var line of newHunk.lines()) {
+    var origin = String.fromCharCode(line.origin());
+    if (origin === '-') {
+      // Remove the elemnt at index
+      runningBlame.splice(newIndex + counter, 1);
+    } else if (origin === '+') {
+      var indexBlame = runningBlame[newIndex + counter];
+      indexBlame.commit.push(commitHash);
+      var content = getLineContentFromLine(line);
+      var lineBlame = {
+        commit: indexBlame.commit,
+        line: content
+      };
+      runningBlame.splice(newIndex + counter, 0, lineBlame);
+      counter++;
+    } else {
+      counter++;
     }
-    return runningBlame;
+  }
+  return runningBlame;
 }
 
 function applyRules(runningBlame, newHunk, commitHash) {
-    // delegate the rules according to the hunk header
-    var hunkHeader = interpretHunkHeader(newHunk.header());
-    commitHash = commitHash.slice(0,7);
-    // this would reveal whether it's purely add/remove or a mixture of the two.
-    if (hunkHeader.oldRevision.length == hunkHeader.newRevision.length) {
-        return changedLineBlame(runningBlame, newHunk, commitHash);
-    } else if (hunkHeader.oldRevision.length < hunkHeader.newRevision.length) {
-        return addedLineBlame(runningBlame, newHunk, commitHash);
-    } else {
-        return removedLineBlame(runningBlame, newHunk, commitHash);
-    }
+  // delegate the rules according to the hunk header
+  var hunkHeader = interpretHunkHeader(newHunk.header());
+  commitHash = commitHash.slice(0, 7);
+  // this would reveal whether it's purely add/remove or a mixture of the two.
+  if (hunkHeader.oldRevision.length === hunkHeader.newRevision.length) {
+    return changedLineBlame(runningBlame, newHunk, commitHash);
+  } else if (hunkHeader.oldRevision.length < hunkHeader.newRevision.length) {
+    return addedLineBlame(runningBlame, newHunk, commitHash);
+  } else {
+    return removedLineBlame(runningBlame, newHunk, commitHash);
+  }
 }
 
 function getLineContentFromLine(line) {
-    var content = line.content();
-    return content.slice(0, content.indexOf(EOL));
+  var content = line.content();
+  return content.slice(0, content.indexOf(EOL));
 }
 
 function changedLineBlame(runningBlame, newHunk, commitHash) {
-    var hunkHeader = interpretHunkHeader(newHunk.header());
-    var newIndex = hunkHeader.newRevision.start - 1;
-    var counter = 0; // deals with the offset
-    for (var line of newHunk.lines()) {
-        var origin = String.fromCharCode(line.origin());
-        if (origin == '-') {
-            // The line being replaced, not sure if we need to do anything
-            // No increment
-        } else if (origin == '+') {
-            // Line needs to be changed
-            var indexBlame = runningBlame[newIndex + counter];
-            indexBlame.commit.push(commitHash);
-            var content = getLineContentFromLine(line);
-            var lineBlame = {
-                commit: indexBlame.commit,
-                line: content
-            };
-            runningBlame[newIndex + counter] = lineBlame;
-            counter++;
-        } else {
-            counter++;
-        }
+  var hunkHeader = interpretHunkHeader(newHunk.header());
+  var newIndex = hunkHeader.newRevision.start - 1;
+  var counter = 0; // deals with the offset
+  for (var line of newHunk.lines()) {
+    var origin = String.fromCharCode(line.origin());
+    if (origin === '-') {
+      // The line being replaced, not sure if we need to do anything
+      // No increment
+      console.log("No lines dummy");
+    } else if (origin === '+') {
+      // Line needs to be changed
+      var indexBlame = runningBlame[newIndex + counter];
+      indexBlame.commit.push(commitHash);
+      var content = getLineContentFromLine(line);
+      var lineBlame = {
+        commit: indexBlame.commit,
+        line: content
+      };
+      runningBlame[newIndex + counter] = lineBlame;
+      counter++;
+    } else {
+      counter++;
     }
-    return runningBlame;
+  }
+  return runningBlame;
 }
 
 
 
 function addedLineBlame(runningBlame, newHunk, commitHash) {
-    if (runningBlame.length == 0) {
-        // If previous blame is empty, i.e. dealing with initial commit
-        var newBlame = [];
-        for (var line of newHunk.lines()) {
-            var content = line.content();
-            content = content.slice(0, content.indexOf(EOL));
-            var lineBlame = {
-                commit: [commitHash],
-                line: content
-            };
-            newBlame.push(lineBlame);
-        }
-        return newBlame;
-    } else {
-        // Previous blame is not empty, will need to insert new line to
-        // position provided by the hunk header
-        var header = interpretHunkHeader(newHunk.header());
-        var newIndex = header.newRevision.start - 1;
-        var counter = 0;
-        var deleteCounter = 0;
-        var lineDeleted = false;
-        // Quick fix
-        var runningCommitSHA = [];
-        for (var line of newHunk.lines()) {
-            var origin = String.fromCharCode(line.origin());
-            if (origin == '+') {
-                var content = getLineContentFromLine(line);
-                if (deleteCounter == 0) {
-                    var lineBlame;
-                    if (lineDeleted) {
-                        var lineBlame = {
-                            commit: runningCommitSHA,
-                            line: content
-                        }
-                    } else {
-                        var lineBlame = {
-                            commit: [commitHash],
-                            line: content
-                        }
-                    }
-                    runningBlame.splice(newIndex + counter, 0, lineBlame);
-                } else {
-                    var indexBlame = runningBlame[newIndex + counter];
-                    indexBlame.commit.push(commitHash);
-                    runningCommitSHA = indexBlame.commit;
-                    var lineBlame = {
-                        commit: indexBlame.commit,
-                        line: content
-                    };
-                    runningBlame[newIndex + counter] = lineBlame;
-                    deleteCounter--;
-                }
-                counter++;
-            } else if (origin == '-') {
-                lineDeleted = true;
-                deleteCounter++;
-            } else {
-                counter++;
-            }
-        }
-        return runningBlame;
+  if (runningBlame.length === 0) {
+    // If previous blame is empty, i.e. dealing with initial commit
+    var newBlame = [];
+    for (var line of newHunk.lines()) {
+      var content = line.content();
+      content = content.slice(0, content.indexOf(EOL));
+      var lineBlame = {
+        commit: [commitHash],
+        line: content
+      };
+      newBlame.push(lineBlame);
     }
+    return newBlame;
+  } else {
+    // Previous blame is not empty, will need to insert new line to
+    // position provided by the hunk header
+    var header = interpretHunkHeader(newHunk.header());
+    var newIndex = header.newRevision.start - 1;
+    var counter = 0;
+    var deleteCounter = 0;
+    var lineDeleted = false;
+    // Quick fix
+    var runningCommitSHA = [];
+    for (line of newHunk.lines()) {
+      var origin = String.fromCharCode(line.origin());
+      if (origin === '+') {
+        content = getLineContentFromLine(line);
+        if (deleteCounter === 0) {
+          if (lineDeleted) {
+            lineBlame = {
+              commit: runningCommitSHA,
+              line: content
+            };
+          } else {
+            lineBlame = {
+              commit: [commitHash],
+              line: content
+            };
+          }
+          runningBlame.splice(newIndex + counter, 0, lineBlame);
+        } else {
+          var indexBlame = runningBlame[newIndex + counter];
+          indexBlame.commit.push(commitHash);
+          runningCommitSHA = indexBlame.commit;
+          lineBlame = {
+            commit: indexBlame.commit,
+            line: content
+          };
+          runningBlame[newIndex + counter] = lineBlame;
+          deleteCounter--;
+        }
+        counter++;
+      } else if (origin === '-') {
+        lineDeleted = true;
+        deleteCounter++;
+      } else {
+        counter++;
+      }
+    }
+    return runningBlame;
+  }
 }
 
 //if you pass 'file' it looks for the flag '--file' or '-f'
@@ -185,7 +185,7 @@ function parseArg(type) {
   if (type === 'file' && process.argv.length > 2) {
     //if there is no -- at all in the string or at a point later, within the filename
     if (process.argv[2].indexOf('--') === -1 || process.argv[2].indexOf('--') > 0) {
-      return process.argv[2]
+      return process.argv[2];
     }
   }
   for (var i = 0; i < process.argv.length - 1; i++) {
@@ -245,7 +245,7 @@ module.exports = async function (cmdArgs) {
     //save the print in a string so we can return it.
     var printedBlame = '';
     for (var lineBlame of blame) {
-      printedBlame += lineBlame.commit.join() + ': ' + lineBlame.line + EOL
+      printedBlame += lineBlame.commit.join() + ': ' + lineBlame.line + EOL;
     }
     //like console.log but without a trailing newline
     process.stdout.write(printedBlame);
