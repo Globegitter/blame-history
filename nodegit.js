@@ -40,28 +40,27 @@ function interpretHunkHeader(hunkHeader) {
 
 // Dealing with the condition where lines
 function removedLineBlame(runningBlame, newHunk, commitHash) {
-    var hunkHeader = interpretHunkHeader(newHunk.header());
-    var newIndex = hunkHeader.newRevision.start - 1;
-    var counter = 0;
-    for (var line of newHunk.lines()) {
-        var origin = String.fromCharCode(line.origin());
-        if (origin == '-') {
-            // Remove the elemnt at index
-            runningBlame.splice(newIndex + counter, 1)
-        } else if (origin == '+') {
-            var indexBlame = runningBlame[newIndex + counter];
-            var runningCommit = indexBlame.commit.slice();
-            runningCommit.push(commitHash);
-            var content = getLineContentFromLine(line);
-            var lineBlame = {
-                commit: runningCommit,
-                line: content
-            };
-            runningBlame.splice(newIndex + counter, 0, lineBlame);
-            counter++;
-        } else {
-            counter++;
-        }
+  var hunkHeader = interpretHunkHeader(newHunk.header());
+  var newIndex = hunkHeader.newRevision.start - 1;
+  var counter = 0;
+  for (var line of newHunk.lines()) {
+    var origin = String.fromCharCode(line.origin());
+    if (origin === '-') {
+      // Remove the elemnt at index
+      runningBlame.splice(newIndex + counter, 1);
+    } else if (origin === '+') {
+      var indexBlame = runningBlame[newIndex + counter];
+      var runningCommit = indexBlame.commit.slice();
+      runningCommit.push(commitHash);
+      var content = getLineContentFromLine(line);
+      var lineBlame = {
+        commit: runningCommit,
+        line: content
+      };
+      runningBlame.splice(newIndex + counter, 0, lineBlame);
+      counter++;
+    } else {
+      counter++;
     }
   }
   return runningBlame;
@@ -283,10 +282,10 @@ module.exports = async function (cmdArgs) {
           log.verbose();
           log.verbose();
           log.verbose(`Found file in commit ${commit.sha()}`);
-          log.verbose("Author:", commit.author().name() +
-         " <" + commit.author().email() + ">");
-          log.verbose("Date:", commit.date());
-          log.verbose("\n    " + commit.message());
+          log.verbose('Author:', commit.author().name() +
+         ' <' + commit.author().email() + '>');
+          log.verbose('Date:', commit.date());
+          log.verbose('\n    ' + commit.message());
           log.verbose(`Showing hunk/diff for file ${filePath}`);
 
           //getting the hunks (ConvenientHunk) in this patch
