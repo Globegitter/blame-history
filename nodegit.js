@@ -1,6 +1,5 @@
 var Git = require('nodegit');
 var { EOL } = require('os');
-var fs = require('fs');
 var path = require('path');
 //provides some nicer logs function, such as only showing on the --verbose flag
 var logger = require('captains-log');
@@ -25,7 +24,7 @@ function getOldRevisionLines(hunkHeader) {
   var contentSplit = content.split(',');
   return {
     start : parseInt(contentSplit[0]),
-    length : parseInt(contentSplit[1]),
+    length : parseInt(contentSplit[1])
   };
 }
 
@@ -82,7 +81,11 @@ function applyRules(runningBlame, newHunk, commitHash) {
 
 function getLineContentFromLine(line) {
   var content = line.content();
-  return content.slice(0, content.indexOf(EOL));
+  if (process.platform === 'win32') {
+    return content.slice(0, content.indexOf('\n'));
+  } else {
+    return content.slice(0, content.indexOf(EOL));
+  }
 }
 
 function changedLineBlame(runningBlame, newHunk, commitHash) {
@@ -94,7 +97,8 @@ function changedLineBlame(runningBlame, newHunk, commitHash) {
     if (origin === '-') {
       // The line being replaced, not sure if we need to do anything
       // No increment
-      console.log("No lines dummy");
+      //console.log("No lines dummy");
+      process.stdout.write('');
     } else if (origin === '+') {
       // Line needs to be changed
       var indexBlame = runningBlame[newIndex + counter];
@@ -112,7 +116,6 @@ function changedLineBlame(runningBlame, newHunk, commitHash) {
   }
   return runningBlame;
 }
-
 
 
 function addedLineBlame(runningBlame, newHunk, commitHash) {
@@ -237,6 +240,9 @@ module.exports = async function (cmdArgs) {
 
   var firstMasterCommit = await getFirstMasterCommit(atPath);
   fileName = path.relative(gitRoot, fileName).trim();
+  if (process.platform === 'win32') {
+    fileName = fileName.replace(/\\/g, '/');
+  }
   console.log(fileName.trim());
   var history = firstMasterCommit.history(Git.Revwalk.SORT.REVERSE);
   //var commits = [];
@@ -291,7 +297,11 @@ module.exports = async function (cmdArgs) {
             //getting the diff content line-by-line
             for (var line of hunk.lines()) {
               var content = line.content();
-              log.verbose(count, String.fromCharCode(line.origin()) + ' ' + content.slice(0, content.indexOf(EOL)));
+              if (process.platform === 'win32') {
+                log.verbose(count, String.fromCharCode(line.origin()) + ' ' + content.slice(0, content.indexOf('\n')));
+              } else {
+                log.verbose(count, String.fromCharCode(line.origin()) + ' ' + content.slice(0, content.indexOf(EOL)));
+              }
               count++;
             }
           }
@@ -313,7 +323,7 @@ module.exports = async function (cmdArgs) {
       resolve(printedBlame);
     });
 
-    history.on('error', function(error) {
+    history.on('error', function (error) {
       reject(error);
     });
 
