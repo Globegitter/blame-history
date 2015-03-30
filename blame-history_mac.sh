@@ -1,2 +1,2 @@
 #!/bin/bash
-./node run.js
+./node_mac run.js
